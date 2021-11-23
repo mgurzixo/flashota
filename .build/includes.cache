@@ -1,0 +1,27 @@
+[
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "/home/mgouget/.arduino15/packages/arduino/hardware/avr/1.8.3/cores/arduino"
+  },
+  {
+    "Sourcefile": null,
+    "Include": "",
+    "Includepath": "/home/mgouget/.arduino15/packages/arduino/hardware/avr/1.8.3/variants/eightanaloginputs"
+  },
+  {
+    "Sourcefile": "/home/mgouget/Arduino/generated_examples/SoftwareSerialExample/.build/sketch/SoftwareSerialExample.ino.cpp",
+    "Include": "analogComp.h",
+    "Includepath": "/home/mgouget/Arduino/libraries/analogComp"
+  },
+  {
+    "Sourcefile": "/home/mgouget/Arduino/generated_examples/SoftwareSerialExample/.build/sketch/SoftwareSerialExample.ino.cpp",
+    "Include": "",
+    "Includepath": null
+  },
+  {
+    "Sourcefile": "/home/mgouget/Arduino/libraries/analogComp/analogComp.cpp",
+    "Include": "",
+    "Includepath": null
+  }
+]

@@ -1,0 +1,7 @@
+{
+    "sketch": "SoftwareSerialExample.ino",
+    "port": "/dev/rfcomm1",
+    "board": "Optiboot:avr:optiboot32",
+    "output": ".build",
+    "configuration": "mhz=16MHz,cpu=atmega328p"
+}
