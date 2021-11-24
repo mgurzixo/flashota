@@ -1,5 +1,5 @@
 /*
-  Software serial  test
+  Software serial test
 */
 #include <avr/io.h>
 #include <avr/wdt.h>
