@@ -1,5 +1,5 @@
 {
-    "sketch": "SoftwareSerialExample.ino",
+    "sketch": "flashota.ino",
     "port": "/dev/rfcomm1",
     "board": "Optiboot:avr:optiboot32",
     "output": ".build",
