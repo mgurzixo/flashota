@@ -1,14 +1,14 @@
-doc bluetooth linux serie
+doc bluetooth linux serie\al
+
 systemctl restart bluetooth
 
-
-bluetoothctl: pour definir les devices
+bluetoothctl: for defining devices
 
 scan on -> Device 98:D3:32:F5:B3:BD
 scan off
 pair 98:D3:32:F5:B3:BD
 
 sudo  rfcomm bind 1 98:D3:32:F5:B3:BD 
--> cree /dev/rfcomm1
+-> /dev/rfcomm1 created
 
 Cutecom connect /dev/rfcomm1

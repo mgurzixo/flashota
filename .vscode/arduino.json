@@ -1,7 +1,7 @@
 {
     "sketch": "flashota.ino",
-    "port": "/dev/rfcomm1",
-    "board": "Optiboot:avr:optiboot32",
+    "port": "/dev/rfcomm0",
+    "board": "MgCore:avr:328",
     "output": ".build",
-    "configuration": "mhz=16MHz,cpu=atmega328p"
+    "configuration": "bootloader=uart0,eeprom=keep,variant=modelP,BOD=4v3,LTO=Os,clock=16MHz_external"
 }
