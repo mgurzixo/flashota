@@ -1,26 +1,51 @@
 ## THE PROJECT
 
 I wanted to be able to pilot and update OTA (Over The Air) an arduino PRO mini using bluetooth.
-Doing so allows to update easily a card located behind a dashboard, or sealed in a waterproof container...
+Doing so allows to update easily a card located behind a dashboard, or sealed in a waterproof container, and use a phone as the user interface...
 
 It seemed simple, but it turned out to be very difficult.
 
+WARNING: This project is not for beginners; it involves electronics, Linux shell commands, soldering, interrupts and MCU programming at low level, recompiling a bootloader and patching the arduino GUI. It is NOT packaged and is more a proof of concept and a collection of notes than a finished product. Do NOT try it if you do not understand any of those words!!!
+
 A first try was to follow one of the many tutos like [this one](https://create.arduino.cc/projecthub/PSoC_Rocks/washing-machine-timer-25d969) and write a small sketch which echoes received characters incremented (ie. an 'a' is echoed as 'b'), and test that using a communication program such as [CuteCom](http://cutecom.sourceforge.net/) (I am a Linux user)
 
-For that I needed to setup bluetooth on Ubuntu, and create a serial communication. I installed a cheap dongle which was hopefully recognised, and wired the HC-05 to the arduino as explained.
+For that I needed to setup bluetooth on Ubuntu, and create a serial communication. I installed a cheap bluetooth dongle which was hopefully recognised, and wired the HC-05 to the arduino as explained.
 
-Bluetooth serial communication under Linux is not so simple, but following [this tuto](https://gist.github.com/0/c73e2557d875446b9603) worked well.
+Bluetooth serial communication under Linux is not so simple, but following [this tuto](https://gist.github.com/0/c73e2557d875446b9603) worked well. It involves discovering and pairing using bluetoothctl, then creating a device using rfcomm.
 
-I then connected the arduino to linux using a serial dongle
-
-I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!)
+I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!) So that STATE mimicks the DTR line by going low when the connections is established. Here is the [list of AT commands](https://wiki.iteadstudio.com/Serial_Port_Bluetooth_Module_(Master/Slave)_:_HC-05).
 
 I then connected the arduino to Linux using a serial dongle, flashed my simple echo+1 sketch and checked that, when connecting to the card using the serial dongle and CuteCom on /dev/ttyUSBx, I got my characters echoed with 1 added (ie: 'aaa' -> 'bbb')
 
 Then I connected the arduino to the hc-05, and fired CuteCom onto /dev/rfcomm0. It worked and I was able get my characters echoed OTA :).
 
-The problems started when I tried to upload a sketch OTA: it worked one time out of 30!
+The real problems started when I tried to upload a sketch OTA: it simply did not work!
 
-The first reason is the SENSE voltage: The module inside the HC-05 is alimented in 3.3V, but use internally 1.8V, according to an [old datasheet](https://zaguan.unizar.es/record/86110/files/TAZ-TFG-2017-1855_ANE.pdf). When looking with a scope at the RESET signal, it went barely below 3.5V, which is out of specification for 5V logic. 
+The first reason was that the STATE pin was NOT connected! 
+Very often, the HC05 chinese clones are crappy, and the PIO9 pin (when looking at the module with the antenna on top, it is the 4th one from the top left of the piggyback module) of the tiny piggyback module is not soldered to the PCB;you have to cut the plastic wrapping and add a blob of solder to connect it to the PCB. PIO9 is 2 pins below RX (pin4), in front of the quartz. After that, the STATE pin went low when the connection was established; but it did NOT reset the MCU !
+
+The reason is the STATE voltage: The module inside the HC-05 is alimented in 3.3V, but use internally 1.8V, according to an [old datasheet](https://zaguan.unizar.es/record/86110/files/TAZ-TFG-2017-1855_ANE.pdf). That was effectively the case, and, when looking with a scope at the RESET signal, it went barely below 3.5V, which is out of specification for 5V logic. OK, so let's amplify the signal.
+
+I found [This schematic](https://forum.arduino.cc/t/solved-hc-05-wireless-programming-disabling-auto-reset/397319/4) which I found complicated, and ended up using a very simple shema: 
+![image](https://user-images.githubusercontent.com/87617071/143788934-6118e41b-82a5-4c6e-9d0f-ca460f91be4c.png)
+The collector is connected to the DTR of the arduino, saving a capacitor ;). Obviously,this is an inverting amplifier, so I had to reprogram the HC-05 to its normal mode (AT+POLAR=0,0) and the MCU did reset reliabily at each time the connection was established.
+
+Unforunately OTA uploading worked only one time out of ten, on average!
+
+When looking at TX and RX on the scope, triggered by RESET, I found that the handshake for uploading was not correct most of the time, and the arduino bootloader exited while AVRDUDE Was still sending sync chars.
+
+Arduino uses the [STK500 protocol](http://ww1.microchip.com/downloads/en/AppNotes/doc2525.pdf) for uploading. I needed more delay in the bootloader, so time to flash another bootloader!
+
+[Optiboot](https://github.com/Optiboot/optiboot) is a GREAT program, but the Arduino GUI is very complicated internally. [This post](https://tttapa.github.io/Pages/Arduino/Bootloaders/ATmega328P-custom-frequency.html) was a great help for changing the timeout from 1 second to 8 seconds. As added benefits, I gained more programming space (optiboot is only 512 bytes), and increased upload speed from 57600 to 115200 bauds.
+
+Finally, upload worked reliably, but the price to pay was a startup time of 8 seconds in the normal case (no flashing) and some electronics.
+
+Then I remembered that the [ATMEGA328P](https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf) has a little known feature called the analog comparator, and an internal Vref of about 1.1V, which sits nicely between 1.8V and 0V. In addition, Optiboot allows for [activating the bootloader by software](https://forum.arduino.cc/t/software-reset-with-bootloader/206946/11). There is even a [demo program](https://github.com/Optiboot/optiboot/blob/0a6528d1fc7e129209e3cfabfed1699ac29e96ff/optiboot/examples/test_reset/test_reset.ino#L130) for testing this!
+
+
+
+
+
+
 
 
