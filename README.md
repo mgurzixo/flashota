@@ -95,6 +95,8 @@ The result is the `flashota` sketch.
 
 Have fun!
 
+CAVEAT: Don't forget to load this sketch the first time using a direct serial line ;)
+
 
 
 
