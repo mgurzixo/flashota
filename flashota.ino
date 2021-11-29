@@ -115,7 +115,7 @@ void printBoot()
 
 const byte LED13 = 13; // set the output LED Port B Pin 5
 
-#define USE_AC_LIB 0
+#define USE_ANALOG_COMP_LIB 0
 
 volatile byte doReboot = false; // Flag raised by onACInterrupt()
 
