@@ -161,8 +161,7 @@ void setupAC()
     DIDR1 |= (1 << AIN1D);  // disable digital input on AIN1
     ADCSRB &= ~(1 << ACME); // Use AIN1 (pin 7) on - input
     ACSR &= ~((1 << ACIS1) | (1 << ACIS0)); // interrupt on toggle event
-    ACSR |= (1 << ACIE);                    // Bit 3: enable AC
-    // interrupts
+    ACSR |= (1 << ACIE);                    // Bit 3: enable AC interrupts
 }
 #endif
 
@@ -175,7 +174,6 @@ void setupAC()
 
 void reboot()
 {
-
     MCUSR = ~(1 << WDRF); // allow us to disable WD
     wdt_disable();
     MCUSR = 0; // Force bootloader on optiboot
