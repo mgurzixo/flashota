@@ -11,7 +11,7 @@ A first try was to follow one of the many tutos like [this one](https://create.a
 
 For that I needed to setup bluetooth on Ubuntu, and create a serial communication. I installed a cheap bluetooth dongle which was hopefully recognised, and wired the HC-05 to the arduino as explained.
 
-Bluetooth serial communication under Linux is not so simple, but following [this tuto](https://gist.github.com/0/c73e2557d875446b9603) worked well. It involves discovering and pairing using bluetoothctl, then creating a device using rfcomm.
+Bluetooth serial communication under Linux is not so simple, but following [this tuto](https://gist.github.com/0/c73e2557d875446b9603) worked well. It involves discovering and pairing using `bluetoothctl`, then creating a device using `rfcomm`.
 
 I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!) So that STATE mimicks the DTR line by going low when the connections is established. Here is the [list of AT commands](https://wiki.iteadstudio.com/Serial_Port_Bluetooth_Module_(Master/Slave)_:_HC-05).
 
@@ -26,13 +26,18 @@ Very often, the HC05 chinese clones are crappy, and the PIO9 pin (when looking a
 
 The reason is the STATE voltage: The module inside the HC-05 is alimented in 3.3V, but use internally 1.8V, according to an [old datasheet](https://zaguan.unizar.es/record/86110/files/TAZ-TFG-2017-1855_ANE.pdf). That was effectively the case, and, when looking with a scope at the RESET signal, it went barely below 3.5V, which is out of specification for 5V logic. OK, so let's amplify the signal.
 
-I found [This schematic](https://forum.arduino.cc/t/solved-hc-05-wireless-programming-disabling-auto-reset/397319/4) which I found complicated, and ended up using a very simple shema: 
+I found [This schematic](https://forum.arduino.cc/t/solved-hc-05-wireless-programming-disabling-auto-reset/397319/4) which I found complicated, and ended up using a very simple schema: 
 ![image](https://user-images.githubusercontent.com/87617071/143788934-6118e41b-82a5-4c6e-9d0f-ca460f91be4c.png)
-The collector is connected to the DTR of the arduino, saving a capacitor ;). Obviously,this is an inverting amplifier, so I had to reprogram the HC-05 to its normal mode (AT+POLAR=0,0) and the MCU did reset reliabily at each time the connection was established.
+
+The collector is connected to the DTR of the arduino, saving a capacitor ;).
+
+Obviously,this is an inverting amplifier, so I had to reprogram the HC-05 to its normal mode (AT+POLAR=0,0) and the MCU did reset reliabily at each time the connection was established.
 
 Unforunately OTA uploading worked only one time out of ten, on average!
 
-When looking at TX and RX on the scope, triggered by RESET, I found that the handshake for uploading was not correct most of the time, and the arduino bootloader exited while AVRDUDE Was still sending sync chars.
+When looking at TX and RX on the scope, triggered by RESET, I found that the handshake for uploading was not correct most of the time, and the arduino bootloader exited while AVRDUDE was still sending sync chars.
+
+I suspect that this is caused by some line noise or an HC-05 "feature"...
 
 Arduino uses the [STK500 protocol](http://ww1.microchip.com/downloads/en/AppNotes/doc2525.pdf) for uploading. I needed more delay in the bootloader, so time to flash another bootloader!
 
@@ -40,7 +45,55 @@ Arduino uses the [STK500 protocol](http://ww1.microchip.com/downloads/en/AppNote
 
 Finally, upload worked reliably, but the price to pay was a startup time of 8 seconds in the normal case (no flashing) and some electronics.
 
-Then I remembered that the [ATMEGA328P](https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf) has a little known feature called the analog comparator, and an internal Vref of about 1.1V, which sits nicely between 1.8V and 0V. In addition, Optiboot allows for [activating the bootloader by software](https://forum.arduino.cc/t/software-reset-with-bootloader/206946/11). There is even a [demo program](https://github.com/Optiboot/optiboot/blob/0a6528d1fc7e129209e3cfabfed1699ac29e96ff/optiboot/examples/test_reset/test_reset.ino#L130) for testing this!
+Then I remembered that the [ATMEGA328P](https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf) has a little known feature called the analog comparator, and an internal Vref of about 1.1V, which sits nicely between the 2 values (1.8V and 0V) of STATE. In addition, Optiboot allows for [activating the bootloader by software](https://forum.arduino.cc/t/software-reset-with-bootloader/206946/11). There is even a [demo program](https://github.com/Optiboot/optiboot/blob/0a6528d1fc7e129209e3cfabfed1699ac29e96ff/optiboot/examples/test_reset/test_reset.ino#L130) for testing this.
+
+So I removed the electronics, connected directly the STATE pin to the AIN1 (pin  7) of the Arduino PRO, downloaded a [nice library](https://www.arduino.cc/reference/en/libraries/analogcomp/), added a couple of lines (`analogComparator.setOn()` + `analogComparator.enableInterrupt()`) and an ISR setting a flag when the connection was established, and it worked!
+
+Problem: the MCU did reset correctly, but did not entered into bootloading most of the time. I recompiled Optiboot, setting the timer to 8 seconds, and OTA bootloading worked reliably!
+
+Time to have a look to Optiboot source code!
+
+When calling reset, and if MCUSR == 0, we arrive directly at [line 845](https://github.com/Optiboot/optiboot/blob/master/optiboot/bootloaders/optiboot/optiboot.c), then after some initialisations and setting the watchdog to the timer value, we enter the bootloader main loop at line 923.
+
+There, the function `verifySpace()` is called  from lots of places, and, if something is even slightly wrong, resets the MCU and starts the normal program!
+
+This behaviour is even [documented](https://github.com/Optiboot/optiboot/wiki/HowOptibootWorks#implemented-commands):
+
+> All other commands will result in a success response if they are immediate followed by CRC_EOP (0x20, ' ') (ie they are ignored), or a WDT reset (start applicatin) otherwise.
+
+That's what is called a [feature](https://www.wired.com/story/its-not-a-bug-its-a-feature/)!!!
+
+So I put back timer to 1 second and rewrote verifySpace() according to the [STK500 protocol](http://ww1.microchip.com/downloads/en/AppNotes/doc2525.pdf#G1184161) to tell `avrdude` that we have not understood the command like this:
+
+```
+void verifySpace() {
+  if (getch() != CRC_EOP) {
+#ifdef CLASSIC_VERIFY_SPACE
+    watchdogConfig(WATCHDOG_16MS);    // shorten WD timeout
+    while (1)            // and busy-loop so that WD causes
+      ;              //  a reset and app start.
+#else
+    putch(STK_NOSYNC);
+#endif
+  }
+  else {
+    putch(STK_INSYNC);
+  }
+}
+```
+et voila! it worked perfectly, quickly and reliably
+
+Now, time to integrate this in the Arduino GUI.
+
+The simplest way to do it is to install [MiniCore](https://github.com/MCUdude/MiniCore) from [MCUdude](https://github.com/MCUdude) and patch it.
+
+For doing that, patch the above function in `~/.arduino15/packages/MiniCore/hardware/avr/2.1.3/bootloaders/optiboot_flash/optiboot_flash.c`, and recompile the 8900 !!! bootloaders using the makefile provided in that directory
+
+I finally removed the `analogComp` library and programmed the analog comparator by hand (function `setupAC()` and `ISR(ANALOG_COMP_vect)` in order to have a smaller sketch.
+
+The result is the `flashota` sketch.
+
+Have fun!
 
 
 
