@@ -119,7 +119,7 @@ const byte LED13 = 13; // set the output LED Port B Pin 5
 
 volatile byte doReboot = false; // Flag raised by onACInterrupt()
 
-#ifdef USE_ANALOG_COMP_LIB
+#ifndef USE_ANALOG_COMP_LIB
 #include <analogComp.h>
 // interrupt to be raised by the analog comparator
 void onACInterrupt()
