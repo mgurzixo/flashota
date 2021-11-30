@@ -13,7 +13,7 @@ For that I needed to setup bluetooth on Ubuntu, and create a serial communicatio
 
 Bluetooth serial communication under Linux is not so simple, but following [this tuto](https://gist.github.com/0/c73e2557d875446b9603) worked well. It involves discovering and pairing using `bluetoothctl`, then creating a device using `rfcomm`.
 
-I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!) So that STATE mimicks the DTR line by going low when the connections is established. Here is the [list of AT commands](https://wiki.iteadstudio.com/Serial_Port_Bluetooth_Module_(Master/Slave)_:_HC-05).
+I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!) So that STATE mimicks the DTR line by going low when the connection is established. Here is the [list of AT commands](https://wiki.iteadstudio.com/Serial_Port_Bluetooth_Module_(Master/Slave)_:_HC-05).
 
 I then connected the arduino to Linux using a serial dongle, flashed my simple sketch and validated that, when connecting to the card using the serial dongle and CuteCom on /dev/ttyUSBx, I got my characters echoed with 1 added (ie: 'aaa' -> 'bbb')
 
