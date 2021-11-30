@@ -1,0 +1,7 @@
+#%/bin/bash
+export ARDUINODIR=~/arduino-1.8.16
+mypath=$ARDUINODIR/hardware/tools/avr/bin
+export PATH=$mypath:$PATH
+
+echo make OS=linux ENV=arduino $*
+make -j 16 OS=linux ENV=arduino $*
