@@ -13,7 +13,7 @@ I needed to setup Bluetooth on Ubuntu, and create a serial communication. I inst
 
 Bluetooth serial communication under Linux is not so simple, but following [this tuto](https://gist.github.com/0/c73e2557d875446b9603) worked well. It involves discovering and pairing using `bluetoothctl`, then creating a device using `rfcomm`.
 
-I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!) So that STATE mimicks the DTR line by going low when the connection is established. Here is the [list of AT commands](https://wiki.iteadstudio.com/Serial_Port_Bluetooth_Module_(Master/Slave)_:_HC-05).
+I reprogrammed the HC-05 by following [this tuto](https://www.buildlog.net/blog/2017/10/using-the-hc-05-bluetooth-module/) (Do not forget to use CR+LF for line ends, and use UPPERCASE commands!) So that STATE mimicks the DTR line by going low when the connection is established. Here is the [list of AT commands of the HC-05](https://wiki.iteadstudio.com/Serial_Port_Bluetooth_Module_(Master/Slave)_:_HC-05).
 
 I then connected the Arduino to Linux using a serial dongle, flashed my simple sketch and validated that, when being connected to the card using the serial dongle and CuteCom on /dev/ttyUSBx, I got my characters echoed with 1 added (ie: 'aaa' -> 'bbb')
 
@@ -33,7 +33,7 @@ The reason is the STATE voltage: The module inside the HC-05 is alimented in 3.3
 I found [This schematic](https://forum.arduino.cc/t/solved-hc-05-wireless-programming-disabling-auto-reset/397319/4) which seemed too complicated, and ended up using this very simple schema: 
 ![image](https://user-images.githubusercontent.com/87617071/143788934-6118e41b-82a5-4c6e-9d0f-ca460f91be4c.png)
 
-The collector is connected to the DTR of the Arduino, saving a capacitor ;).
+The collector is directly connected to the DTR of the Arduino, saving a capacitor ;).
 
 Obviously,this is an inverting amplifier, so I had to reprogram the HC-05 to its normal mode (AT+POLAR=0,0) and the MCU did reset reliabily each time the connection was established.
 
