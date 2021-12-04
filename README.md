@@ -22,7 +22,7 @@ Then I connected the Arduino to the HC-05, and fired CuteCom onto /dev/rfcomm0. 
 The real problems started when I tried to upload a sketch OTA: it simply did not work!
 
 The first reason was that the STATE pin of the HC-05 was NOT connected! 
-Very often, the HC-05 chinese clones are crappy, and the PIO9 pin (when looking at the module with the antenna on top, it is the 4th one from the top left of the piggyback module) of the tiny piggyback module is not soldered to the PCB;you have to cut the plastic wrapping and add a blob of solder to connect it to the PCB. PIO9 is pin4, as shown here:
+Very often, the HC-05 chinese clones are crappy, and the PIO9 pin (when looking at the module with the antenna on top, it is the 4th one from the top left of the piggyback module) of the tiny module is not soldered to the PCB. You have to cut the plastic wrapping and add a blob of solder to connect it to the PCB. PIO9 is pin4, as shown here:
 
 ![IMG_20211130_124516](https://user-images.githubusercontent.com/87617071/144050426-891664b6-02a1-4b95-a742-3ed679280a3a.jpg)
 
@@ -90,6 +90,8 @@ void verifySpace() {
 et voila! it worked perfectly, quickly and reliably.
 
 As an added benefit, Optiboot is now 2 bytes smaller :)
+
+I raised [Optiboot issue #333](https://github.com/Optiboot/optiboot/issues/334) concerning this patch.
 
 Now, time to integrate this in the Arduino GUI.
 
